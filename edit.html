@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Product | Kentai Marketplace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="utils.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    function goBack() {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = 'index.html';
+      }
+    }
+  </script>
+  <script src="edit.js"></script>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" );
+    body { font-family: "Inter", sans-serif; background-color: #f8fafc; }
+    .jumia-orange { background-color: #f68b1e; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
+      <button onclick="goBack()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+      </button>
+      <span class="font-black text-slate-900 uppercase tracking-tighter">Edit Product</span>
+      <div class="w-10"></div>
+    </div>
+  </nav>
+
+  <div class="max-w-3xl mx-auto px-4 py-8">
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-10">
+      <div class="space-y-6">
+        <!-- Basic Info -->
+        <div>
+          <label class="block text-[10px] font-black uppercase text-slate-400 mb-2">Product Title</label>
+          <input type="text" id="editTitle" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none font-bold">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-[10px] font-black uppercase text-slate-400 mb-2">Currency</label>
+            <select id="editCurrency" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none font-bold">
+                <option value="NGN">NGN (₦)</option>
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="GHS">GHS (₵)</option>
+                <option value="ZAR">ZAR (R)</option>
+                <option value="KES">KES (Sh)</option>
+                <option value="UGX">UGX (Sh)</option>
+                <option value="EGP">EGP (E£)</option>
+                <option value="INR">INR (₹)</option>
+                <option value="JPY">JPY (¥)</option>
+                <option value="CNY">CNY (¥)</option>
+                <option value="AUD">AUD (A$)</option>
+                <option value="CAD">CAD (C$)</option>
+                <option value="CHF">CHF (CHF)</option>
+                <option value="AED">AED (د.إ)</option>
+                <option value="SAR">SAR (ر.с)</option>
+                <option value="BRL">BRL (R$)</option>
+                <option value="RUB">RUB (₽)</option>
+                <option value="TRY">TRY (₺)</option>
+                <option value="KWD">KWD (د.ك)</option>
+                <option value="QAR">QAR (ر.ق)</option>
+                <option value="PKR">PKR (Rs)</option>
+                <option value="IDR">IDR (Rp)</option>
+                <option value="MYR">MYR (RM)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-black uppercase text-slate-400 mb-2">Price</label>
+            <input type="number" id="editPrice" oninput="calculateDiscount()" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none font-bold">
+          </div>
+          <div>
+            <label class="block text-[10px] font-black uppercase text-slate-400 mb-2">Discount %</label>
+            <input type="number" id="editDiscount" oninput="calculateDiscount()" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none font-bold">
+          </div>
+        </div>
+
+        <div id="discountPreview" class="hidden"></div>
+
+        <!-- Images Section -->
+        <div class="border-t pt-6">
+          <label class="block text-[10px] font-black uppercase text-slate-400 mb-4">Product Images (Max 3)</label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <!-- Slot 1 -->
+            <div class="space-y-3">
+              <div class="aspect-square bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden relative group">
+                <img id="preview1" class="w-full h-full object-contain hidden">
+                <div id="placeholder1" class="text-center p-4">
+                  <svg class="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Image 1</span>
+                </div>
+              </div>
+              <input type="url" id="url1" placeholder="Paste Image URL" oninput="handleUrl(1, this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-bold outline-none">
+              <button type="button" onclick="document.getElementById('file1').click()" class="w-full py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase hover:bg-slate-900 transition">Upload File</button>
+              <input type="file" id="file1" class="hidden" accept="image/*" onchange="handleFile(1, event)">
+            </div>
+            <!-- Slot 2 -->
+            <div class="space-y-3">
+              <div class="aspect-square bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden relative group">
+                <img id="preview2" class="w-full h-full object-contain hidden">
+                <div id="placeholder2" class="text-center p-4">
+                  <svg class="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Image 2</span>
+                </div>
+              </div>
+              <input type="url" id="url2" placeholder="Paste Image URL" oninput="handleUrl(2, this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-bold outline-none">
+              <button type="button" onclick="document.getElementById('file2').click()" class="w-full py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase hover:bg-slate-900 transition">Upload File</button>
+              <input type="file" id="file2" class="hidden" accept="image/*" onchange="handleFile(2, event)">
+            </div>
+            <!-- Slot 3 -->
+            <div class="space-y-3">
+              <div class="aspect-square bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden relative group">
+                <img id="preview3" class="w-full h-full object-contain hidden">
+                <div id="placeholder3" class="text-center p-4">
+                  <svg class="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Image 3</span>
+                </div>
+              </div>
+              <input type="url" id="url3" placeholder="Paste Image URL" oninput="handleUrl(3, this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-bold outline-none">
+              <button type="button" onclick="document.getElementById('file3').click()" class="w-full py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase hover:bg-slate-900 transition">Upload File</button>
+              <input type="file" id="file3" class="hidden" accept="image/*" onchange="handleFile(3, event)">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-black uppercase text-slate-400 mb-2">Category</label>
+          <input type="text" id="editCategory" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none font-bold">
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-black uppercase text-slate-400 mb-2">Description</label>
+          <textarea id="editDescription" rows="4" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-black uppercase text-slate-400 mb-2">Pickup Address</label>
+          <input type="text" id="editAddress" class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none font-bold">
+        </div>
+
+        <!-- Bank Details Section -->
+        <div class="border-t pt-6">
+          <label class="block text-[10px] font-black uppercase text-slate-400 mb-4">Bank Details (Optional)</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[8px] font-black uppercase text-slate-400 mb-1">Bank Name</label>
+              <input type="text" id="editBankName" placeholder="e.g. Kuda Bank" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl outline-none text-xs font-bold">
+            </div>
+            <div>
+              <label class="block text-[8px] font-black uppercase text-slate-400 mb-1">Bank Currency</label>
+              <select id="editBankCurrency" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold outline-none">
+                  <option value="NGN">NGN (₦)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="GHS">GHS (₵)</option>
+                  <option value="ZAR">ZAR (R)</option>
+                  <option value="KES">KES (Sh)</option>
+                  <option value="UGX">UGX (Sh)</option>
+                  <option value="EGP">EGP (E£)</option>
+                  <option value="INR">INR (₹)</option>
+                  <option value="JPY">JPY (¥)</option>
+                  <option value="CNY">CNY (¥)</option>
+                  <option value="AUD">AUD (A$)</option>
+                  <option value="CAD">CAD (C$)</option>
+                  <option value="CHF">CHF (CHF)</option>
+                  <option value="AED">AED (د.إ)</option>
+                  <option value="SAR">SAR (ر.с)</option>
+                  <option value="BRL">BRL (R$)</option>
+                  <option value="RUB">RUB (₽)</option>
+                  <option value="TRY">TRY (₺)</option>
+                  <option value="KWD">KWD (د.ك)</option>
+                  <option value="QAR">QAR (ر.ق)</option>
+                  <option value="PKR">PKR (Rs)</option>
+                  <option value="IDR">IDR (Rp)</option>
+                  <option value="MYR">MYR (RM)</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label class="block text-[8px] font-black uppercase text-slate-400 mb-1">Account Number</label>
+              <input type="text" id="editAccountNumber" placeholder="e.g. 1234567890" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl outline-none text-xs font-bold">
+            </div>
+            <div>
+              <label class="block text-[8px] font-black uppercase text-slate-400 mb-1">Account Name</label>
+              <input type="text" id="editAccountName" placeholder="e.g. John Doe" class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl outline-none text-xs font-bold">
+            </div>
+          </div>
+          <div class="mt-4 p-3 bg-red-50 border border-red-100 rounded-xl">
+            <p class="text-[9px] font-bold text-red-600 leading-tight">
+              Chat with the customer first and any other forms of scam will be traced back and such person will be arrested.
+            </p>
+          </div>
+        </div>
+
+        <!-- Contact Details -->
+        <div class="border-t pt-6">
+          <label class="block text-[10px] font-black uppercase text-slate-400 mb-4">Contact Details</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[8px] font-black uppercase text-slate-400 mb-1">Phone (with Code)</label>
+              <div class="flex gap-2">
+                <select id="editPhoneCode" class="w-24 px-2 py-3 bg-slate-50 border rounded-xl text-xs font-bold">
+                  <option value="+234">+234 (NG)</option>
+                  <option value="+1">+1 (US)</option>
+                  <option value="+44">+44 (UK)</option>
+                  <option value="+233">+233 (GH)</option>
+                  <option value="+254">+254 (KE)</option>
+                  <option value="+27">+27 (ZA)</option>
+                  <option value="+20">+20 (EG)</option>
+                  <option value="+256">+256 (UG)</option>
+                  <option value="+255">+255 (TZ)</option>
+                  <option value="+212">+212 (MA)</option>
+                  <option value="+221">+221 (SN)</option>
+                  <option value="+225">+225 (CI)</option>
+                  <option value="+216">+216 (TN)</option>
+                  <option value="+213">+213 (DZ)</option>
+                  <option value="+241">+241 (GA)</option>
+                  <option value="+237">+237 (CM)</option>
+                  <option value="+224">+224 (GN)</option>
+                  <option value="+226">+226 (BF)</option>
+                  <option value="+228">+228 (TG)</option>
+                  <option value="+229">+229 (BJ)</option>
+                  <option value="+250">+250 (RW)</option>
+                  <option value="+260">+260 (ZM)</option>
+                  <option value="+263">+263 (ZW)</option>
+                  <option value="+265">+265 (MW)</option>
+                  <option value="+251">+251 (ET)</option>
+                  <option value="+249">+249 (SD)</option>
+                  <option value="+218">+218 (LY)</option>
+                  <option value="+244">+244 (AO)</option>
+                  <option value="+258">+258 (MZ)</option>
+                  <option value="+264">+264 (NA)</option>
+                  <option value="+267">+267 (BW)</option>
+                  <option value="+91">+91 (IN)</option>
+                  <option value="+86">+86 (CN)</option>
+                  <option value="+971">+971 (AE)</option>
+                  <option value="+966">+966 (SA)</option>
+                </select>
+                <input type="tel" id="editPhone" class="flex-1 px-4 py-3 bg-slate-50 border rounded-xl outline-none text-xs font-bold">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[8px] font-black uppercase text-slate-400 mb-1">WhatsApp (with Code)</label>
+              <div class="flex gap-2">
+                <select id="editWhatsappCode" class="w-24 px-2 py-3 bg-slate-50 border rounded-xl text-xs font-bold">
+                  <option value="+234">+234 (NG)</option>
+                  <option value="+1">+1 (US)</option>
+                  <option value="+44">+44 (UK)</option>
+                  <option value="+233">+233 (GH)</option>
+                  <option value="+254">+254 (KE)</option>
+                  <option value="+27">+27 (ZA)</option>
+                  <option value="+20">+20 (EG)</option>
+                  <option value="+256">+256 (UG)</option>
+                  <option value="+255">+255 (TZ)</option>
+                  <option value="+212">+212 (MA)</option>
+                  <option value="+221">+221 (SN)</option>
+                  <option value="+225">+225 (CI)</option>
+                  <option value="+216">+216 (TN)</option>
+                  <option value="+213">+213 (DZ)</option>
+                  <option value="+241">+241 (GA)</option>
+                  <option value="+237">+237 (CM)</option>
+                  <option value="+224">+224 (GN)</option>
+                  <option value="+226">+226 (BF)</option>
+                  <option value="+228">+228 (TG)</option>
+                  <option value="+229">+229 (BJ)</option>
+                  <option value="+250">+250 (RW)</option>
+                  <option value="+260">+260 (ZM)</option>
+                  <option value="+263">+263 (ZW)</option>
+                  <option value="+265">+265 (MW)</option>
+                  <option value="+251">+251 (ET)</option>
+                  <option value="+249">+249 (SD)</option>
+                  <option value="+218">+218 (LY)</option>
+                  <option value="+244">+244 (AO)</option>
+                  <option value="+258">+258 (MZ)</option>
+                  <option value="+264">+264 (NA)</option>
+                  <option value="+267">+267 (BW)</option>
+                  <option value="+91">+91 (IN)</option>
+                  <option value="+86">+86 (CN)</option>
+                  <option value="+971">+971 (AE)</option>
+                  <option value="+966">+966 (SA)</option>
+                </select>
+                <input type="tel" id="editWhatsapp" class="flex-1 px-4 py-3 bg-slate-50 border rounded-xl outline-none text-xs font-bold">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social Media Links Section -->
+        <div class="border-t pt-6">
+          <label class="block text-[10px] font-black uppercase text-slate-400 mb-4">Social Media Links (Up to 10)</label>
+          <div id="socialLinksContainer" class="space-y-3">
+            <!-- Dynamically populated -->
+          </div>
+          <button type="button" onclick="addSocialField()" id="addSocialBtn" class="mt-4 flex items-center gap-2 text-orange-600 font-black text-[10px] uppercase hover:text-orange-800 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            Add Another Link
+          </button>
+        </div>
+
+        <button onclick="saveChanges()" class="w-full py-5 jumia-orange text-white font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-orange-100 hover:opacity-90 transition">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Profile - Kentai Marketplace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <script src="firebase-config.js"></script>
+    <script src="utils.js"></script>
+    <script src="auth.js"></script>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap");
+        body { font-family: "Inter", sans-serif; background-color: #f1f1f2; color: #1e293b; }
+        .jumia-orange { background-color: #f68b1e; }
+        .jumia-text-orange { color: #f68b1e; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2">
+            <button onclick="goBack()" class="p-1.5 sm:p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors" aria-label="Go Back">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            
+            <div class="flex items-center gap-1.5 sm:gap-3">
+
+                <a href="index.html" class="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-white text-blac-600 font-bold rounded-lg hover:bg-red-200 transition text-[10px] sm:text-sm uppercase tracking-wide">
+                    Home
+                </a>
+                
+                <a href="my-listings.html" class="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-slate-100 text-slate-600 font-bold rounded-lg hover:bg-slate-200 transition text-[10px] sm:text-sm uppercase tracking-wide">
+                    Listings
+                </a>
+                
+                <button onclick="viewStore()" class="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-blue-100 text-blue-600 font-bold rounded-lg hover:bg-blue-200 transition text-[10px] sm:text-sm uppercase tracking-wide">
+                    View Profile
+                </button>
+                <button onclick="handleLogout()" class="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-red-100 text-red-600 font-bold rounded-lg hover:bg-red-200 transition text-[10px] sm:text-sm uppercase tracking-wide">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-10">
+        <!-- Header -->
+        <div class="mb-8 text-center sm:text-left">
+            <h1 class="text-3xl sm:text-4xl font-black text-slate-900 leading-tight">Store Profile</h1>
+            <p class="text-slate-500 mt-2 text-sm sm:text-base">Manage your store information and settings</p>
+        </div>
+
+        <!-- Store Stats -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
+            <div class="bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 shadow-sm text-center sm:text-left">
+                <p class="text-slate-400 text-[10px] sm:text-xs font-black uppercase tracking-widest mb-1">Products</p>
+                <p class="text-2xl sm:text-3xl font-black text-slate-900" id="statProducts">0</p>
+            </div>
+            <div class="bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 shadow-sm text-center sm:text-left">
+                <p class="text-slate-400 text-[10px] sm:text-xs font-black uppercase tracking-widest mb-1">Followers</p>
+                <p class="text-2xl sm:text-3xl font-black text-slate-900" id="statFollowers">0</p>
+            </div>
+            <div class="bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 shadow-sm text-center sm:text-left">
+                <p class="text-slate-400 text-[10px] sm:text-xs font-black uppercase tracking-widest mb-1">Rating</p>
+                <p class="text-2xl sm:text-3xl font-black text-slate-900"><span id="statRating">0</span><span class="text-yellow-500 ml-0.5">★</span></p>
+            </div>
+            <div class="bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 shadow-sm text-center sm:text-left">
+                <p class="text-slate-400 text-[10px] sm:text-xs font-black uppercase tracking-widest mb-1">Reviews</p>
+                <p class="text-2xl sm:text-3xl font-black text-slate-900" id="statReviews">0</p>
+            </div>
+        </div>
+
+        <!-- Store Information -->
+        <div class="bg-white rounded-3xl shadow-lg p-5 sm:p-8 border border-slate-100 mb-8">
+            <h2 class="text-xl sm:text-2xl font-black text-slate-900 mb-6 uppercase tracking-tight">Store Information</h2>
+            
+            <form id="storeProfileForm" onsubmit="handleUpdateStore(event)" class="space-y-5 sm:space-y-6">
+                
+                <!-- Profile Customization -->
+                <div class="flex flex-col items-center gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div id="profilePreview" class="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center text-white text-4xl sm:text-5xl font-black shadow-lg overflow-hidden">
+                        <span id="initialDisplay">S</span>
+                    </div>
+                    <div class="w-full space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-black uppercase text-slate-400 mb-1.5 tracking-widest">Change Profile Picture</label>
+                            <input type="file" id="profileImage" accept="image/*" onchange="handleProfileImageSelect(event)" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-white file:text-orange-600 hover:file:bg-orange-50 transition border border-slate-200 rounded-xl p-2 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black uppercase text-slate-400 mb-1.5 tracking-widest">Edit Profile Alphabet</label>
+                            <input type="text" id="storeInitial" maxlength="2" placeholder="S" oninput="updateInitial(this.value)" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#f68b1e] outline-none font-bold text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Store Name -->
+                <div>
+                    <label class="block text-[10px] sm:text-xs font-black uppercase text-slate-400 mb-1.5 tracking-widest">Store Name *</label>
+                    <input type="text" id="storeName" placeholder="My Store"
+                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#f68b1e] outline-none font-bold text-sm sm:text-base" required>
+                </div>
+
+                <!-- Store Slug -->
+                <div>
+                    <label class="block text-[10px] sm:text-xs font-black uppercase text-slate-400 mb-1.5 tracking-widest">Store URL</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="storeSlugDisplay" placeholder="store-slug"
+                            class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#f68b1e] outline-none font-bold text-sm sm:text-base">
+                        <button type="button" onclick="copyStoreLink()" class="px-4 py-3 bg-orange-50 text-[#f68b1e] font-black uppercase tracking-widest rounded-xl hover:bg-orange-100 transition text-[10px] sm:text-xs whitespace-nowrap">
+                            Copy
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1.5 font-medium">Your unique store URL (you can change this anytime)</p>
+                </div>
+
+                <!-- Store Description -->
+                <div>
+                    <label class="block text-[10px] sm:text-xs font-black uppercase text-slate-400 mb-1.5 tracking-widest">Store Description</label>
+                    <textarea id="storeDescription" placeholder="Tell customers about your store..." rows="4" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#f68b1e] outline-none font-bold resize-none text-sm sm:text-base"></textarea>
+                    <p class="text-[10px] text-slate-400 mt-1.5 font-medium">Maximum 500 characters</p>
+                </div>
+
+                <!-- Store Category -->
+                <div class="space-y-3">
+                    <label class="block text-[10px] sm:text-xs font-black uppercase text-slate-400 tracking-widest">Primary Category</label>
+                    <select id="storeCategory" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#f68b1e] outline-none font-bold text-sm sm:text-base">
+                        <option value="">Select a category</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Fashion">Fashion & Clothing</option>
+                        <option value="Home">Home & Garden</option>
+                        <option value="Sports">Sports & Outdoors</option>
+                        <option value="Books">Books & Media</option>
+                        <option value="Toys">Toys & Games</option>
+                        <option value="Beauty">Beauty & Personal Care</option>
+                        <option value="Food">Food & Beverages</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="text" id="storeCategoryCustom" placeholder="Or type your own category..."
+                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#f68b1e] outline-none font-bold text-sm sm:text-base">
+                </div>
+
+                <!-- Contact Information -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-black uppercase text-slate-400 mb-1.5 tracking-widest">Store Email</label>
+                        <input type="email" id="storeEmail" placeholder="store@example.com"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#f68b1e] outline-none font-bold text-sm sm:text-base">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-black uppercase text-slate-400 mb-1.5 tracking-widest">Store Phone</label>
+                        <div class="flex gap-2">
+                            <select id="storePhoneCountry" class="px-2 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#f68b1e] outline-none font-bold text-[10px] sm:text-xs">
+                                <option value="+234">NG +234</option>
+                                <option value="+1">US +1</option>
+                                <option value="+44">UK +44</option>
+                                <option value="+91">IN +91</option>
+                                <option value="+86">CN +86</option>
+                                <option value="+27">ZA +27</option>
+                                <option value="+254">KE +254</option>
+                                <option value="+233">GH +233</option>
+                            </select>
+                            <input type="tel" id="storePhone" placeholder="Number"
+                                class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#f68b1e] outline-none font-bold text-sm sm:text-base">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Address and Website -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-black uppercase text-slate-400 mb-1.5 tracking-widest">Store Address</label>
+                        <input type="text" id="storeAddress" placeholder="Address"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#f68b1e] outline-none font-bold text-sm sm:text-base">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] sm:text-xs font-black uppercase text-slate-400 mb-1.5 tracking-widest">Store Website</label>
+                        <input type="url" id="storeWebsite" placeholder="https://..."
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#f68b1e] outline-none font-bold text-sm sm:text-base">
+                    </div>
+                </div>
+
+                <!-- Social Links -->
+                <div>
+                    <label class="block text-[10px] sm:text-xs font-black uppercase text-slate-400 mb-1.5 tracking-widest">Social Media Links</label>
+                    <div id="socialLinksContainer" class="space-y-3"></div>
+                    <button type="button" onclick="addSocialLink()" class="mt-3 text-[10px] sm:text-xs font-black text-[#f68b1e] uppercase tracking-widest hover:underline">
+                        + Add Social Link
+                    </button>
+                </div>
+
+                <!-- Save Button -->
+                <button type="submit" class="w-full py-4 sm:py-5 bg-[#f68b1e] text-white font-black text-sm sm:text-lg rounded-2xl sm:rounded-3xl hover:opacity-90 transition shadow-lg shadow-orange-100 uppercase tracking-[0.2em]">
+                    Save Changes
+                </button>
+            </form>
+        </div>
+
+        <!-- Followers Section -->
+        <div class="bg-white rounded-3xl shadow-lg p-5 sm:p-8 border border-slate-100 mb-8">
+            <h2 class="text-xl sm:text-2xl font-black text-slate-900 mb-6 uppercase tracking-tight">Store Followers</h2>
+            <div id="followersList" class="space-y-3">
+                <p class="text-slate-400 text-center py-10 text-sm font-bold uppercase tracking-widest">Loading followers...</p>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="bg-red-50 border border-red-200 rounded-3xl p-6 sm:p-8">
+            <h2 class="text-xl sm:text-2xl font-black text-red-900 mb-2 uppercase tracking-tight">Danger Zone</h2>
+            <p class="text-red-800 mb-6 text-sm font-medium">These actions cannot be undone. Please be careful.</p>
+            <button onclick="deleteStore()" class="w-full sm:w-auto px-8 py-3 bg-red-600 text-white font-black uppercase tracking-widest rounded-xl hover:bg-red-700 transition shadow-lg shadow-red-100 text-xs">
+                Delete Store
+            </button>
+        </div>
+    </div>
+
+    <script src="store-profile.js"></script>
+</body>
+</html>

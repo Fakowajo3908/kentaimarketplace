@@ -1,0 +1,25 @@
+{
+  "name": "flutterwave-webhook-server",
+  "version": "1.0.0",
+  "description": "A simple Node.js server to handle Flutterwave webhooks and update Firebase Firestore.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "body-parser": "^1.20.2",
+    "firebase-admin": "^12.2.0",
+    "axios": "^1.7.2"
+  },
+  "keywords": [
+    "flutterwave",
+    "webhook",
+    "firebase",
+    "firestore",
+    "node",
+    "express"
+  ],
+  "author": "Manus AI",
+  "license": "MIT"
+}

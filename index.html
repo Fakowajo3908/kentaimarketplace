@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kentai Marketplace | Premium Shopping</title>
+  
+  <meta name="theme-color" content="#f68b1e">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kentai Marketplace">
+  <link rel="apple-touch-icon" href="https://via.placeholder.com/192?text=Kentai Marketplace  ">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="utils.js"></script>
+  <script src="auth.js"></script>
+  <script src="feed.js"></script>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" );
+    body { font-family: "Inter", sans-serif; background-color: #f1f1f2; padding-bottom: 70px; }
+    @media (min-width: 768px) { body { padding-bottom: 0; } }
+    .jumia-orange { background-color: #f68b1e; }
+    .jumia-text-orange { color: #f68b1e; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .carousel-container { position: relative; overflow: hidden; border-radius: 12px; }
+    .carousel-track { display: flex; width: 100%; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); will-change: transform; }
+    .carousel-slide { flex: 0 0 100%; width: 100%; height: 250px; position: relative; overflow: hidden; }
+    .carousel-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    @media (min-width: 768px) { .carousel-slide { height: 500px; } }
+    .carousel-overlay { position: absolute; inset: 0; background: linear-gradient(to right, rgba(0,0,0,0.85), transparent); display: flex; flex-direction: column; justify-content: center; padding: 2.5rem; color: white; }
+    .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); z-index: 30; background: rgba(255, 255, 255, 0.95); width: 3rem; height: 3rem; min-width: 3rem; min-height: 3rem; border-radius: 9999px; color: #111827; cursor: pointer; transition: transform 0.3s, background 0.3s; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12); border: 1px solid rgba(15, 23, 42, 0.08); }
+    .carousel-btn:hover { background: rgba(255, 255, 255, 1); transform: translateY(-50%) scale(1.05); }
+    .carousel-btn-left { left: 1rem; }
+    .carousel-btn-right { right: 1rem; }
+    @media (max-width: 768px) { .carousel-btn-left, .carousel-btn-right { width: 2.5rem; height: 2.5rem; } }
+    .carousel-btn:hover { background: rgba(255, 255, 255, 0.5); }
+    .carousel-btn-left { left: 1rem; }
+    .carousel-btn-right { right: 1rem; }
+    
+    .pagination-box { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+    .page-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 800; font-size: 0.875rem; transition: all 0.3s; cursor: pointer; border: 1px solid transparent; }
+    .page-btn.active { background-color: #f68b1e; color: white; box-shadow: 0 10px 15px -3px rgba(246, 139, 30, 0.4); transform: scale(1.1); }
+    .page-btn:not(.active) { background-color: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+    .nav-btn { padding: 0 1rem; height: 40px; display: flex; align-items: center; gap: 0.5rem; border-radius: 0.75rem; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; background: #f1f5f9; color: #475569; }
+  </style>
+</head>
+<body>
+
+  <header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2 cursor-pointer flex-shrink-0" onclick="location.reload()">
+        <div class="w-10 h-10 jumia-orange rounded-lg flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+        </div>
+        <span class="font-black text-slate-900 text-xl tracking-tighter hidden md:inline uppercase">Kentai Marketplace</span>
+      </div>
+
+      <div class="flex-1 max-w-xl relative hidden md:block">
+        <input type="text" id="searchInput" oninput="window.feedModule.handleSearch(this.value)" placeholder="Search products..." class="w-full pl-10 pr-4 py-2 rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-4">
+        <div class="flex items-center gap-1 sm:gap-2 bg-orange-50 px-2 sm:px-3 py-1.5 rounded-full border border-orange-200">
+          <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+          <span class="text-orange-600 font-black text-xs sm:text-sm" id="navPoints">0</span>
+        </div>
+        <!-- STORE FEATURE: Add "Create Store" button (NEW) -->
+        <button onclick="location.href='store-setup.html'" class="hidden sm:flex items-center gap-2 text-slate-600 hover:text-blue-600 font-black uppercase text-[10px] tracking-widest transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m10 0l2-9m-12 9h16m-8-3v6m-2-6v6"/></svg>
+            Store
+        </button>
+        <button onclick="location.href='my-listings.html'" class="hidden sm:flex items-center gap-2 text-slate-600 hover:text-orange-600 font-black uppercase text-[10px] tracking-widest transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            My List
+        </button>
+        <button onclick="location.href='promote.html'" class="jumia-orange text-white px-3 sm:px-5 py-2 rounded-md font-bold text-xs sm:text-sm hover:opacity-90 transition uppercase tracking-wide">Sell</button>
+        <button onclick="handleLogout()" class="p-2 text-slate-500 hover:text-red-600 transition"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-3 sm:px-4 py-2">
+    <!-- STORE FEATURE: Add Store Promotion Banner (NEW) -->
+    <div class="mb-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-4 shadow-lg">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-black mb-2">Want to Sell More?</h2>
+          <p class="text-blue-100">Create your own store and showcase all your products in one place. Get more visibility and build your brand!</p>
+        </div>
+        <button onclick="location.href='store-setup.html'" class="px-8 py-3 bg-white text-blue-600 font-black rounded-lg hover:shadow-lg transition whitespace-nowrap">
+          Create Store Now →
+        </button>
+      </div>
+    </div>
+
+    <aside class="w-full bg-white rounded-md shadow-sm p-3 mb-4">
+      <div id="categorySidebar" class="flex flex-wrap gap-2"></div>
+    </aside>
+
+    <div class="mb-4">
+      <div class="carousel-container bg-white shadow-sm">
+        <div id="carouselTrack" class="carousel-track"></div>
+        <button onclick="moveCarousel(-1)" class="carousel-btn carousel-btn-left" title="Previous slide (or press Left Arrow)">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button onclick="moveCarousel(1)" class="carousel-btn carousel-btn-right" title="Next slide (or press Right Arrow)">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="flashSaleSection" class="mb-4 bg-white rounded-md shadow-sm overflow-hidden hidden">
+      <div class="jumia-orange p-3 flex justify-between items-center text-white">
+        <div class="flex items-center gap-2"><h2 class="font-bold uppercase tracking-wide text-sm sm:text-base">Flash Sales</h2></div>
+        <span id="flashCountdown" class="bg-white text-orange-600 px-2 rounded text-xs sm:text-sm font-bold">00:00:00</span>
+      </div>
+      <div id="flashSaleContainer" class="p-4 flex gap-4 overflow-x-auto no-scrollbar"></div>
+    </div>
+
+    <div id="promotedSection" class="mb-4 bg-white rounded-md shadow-sm overflow-hidden hidden border border-orange-200">
+      <div class="jumia-orange p-3 text-white"><h2 class="font-bold uppercase tracking-wide text-xs">Premium Listings</h2></div>
+      <div id="promotedContainer" class="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"></div>
+    </div>
+
+    <div class="bg-white rounded-md shadow-sm p-3">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-3 border-b pb-3 gap-3">
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-slate-800 uppercase">All Listings</h2>
+          <p class="text-sm text-slate-500 mt-1">Filter by category, price range, or sort listings by newest and popularity.</p>
+        </div>
+        <div class="flex flex-wrap gap-2 w-full lg:w-auto">
+          <div class="flex items-center gap-2 bg-slate-100 rounded-full px-3 py-2">
+            <label for="categoryFilter" class="text-[10px] font-black uppercase tracking-widest text-slate-500">Category</label>
+            <select id="categoryFilter" onchange="window.feedModule.handleCategoryFilter(this.value)" class="bg-transparent outline-none text-sm text-slate-700">
+              <option value="All">All</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2 bg-slate-100 rounded-full px-3 py-2">
+            <label for="priceFilter" class="text-[10px] font-black uppercase tracking-widest text-slate-500">Price</label>
+            <select id="priceFilter" onchange="window.feedModule.handlePriceFilter(this.value)" class="bg-transparent outline-none text-sm text-slate-700">
+              <option value="all">All</option>
+              <option value="0-50">₦0 - ₦50</option>
+              <option value="50-100">₦50 - ₦100</option>
+              <option value="100+">₦100+</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2 bg-slate-100 rounded-full px-3 py-2">
+            <label for="sortSelect" class="text-[10px] font-black uppercase tracking-widest text-slate-500">Sort</label>
+            <select id="sortSelect" onchange="window.feedModule.handleSort(this.value)" class="bg-transparent outline-none text-sm text-slate-700">
+              <option value="newest">Newest</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="popularity">Popularity</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div id="categoryTabs" class="flex gap-2 overflow-x-auto no-scrollbar w-full mb-4"></div>
+      <div id="feedContainer" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-4"></div>
+      
+      <div class="flex flex-col items-center gap-2 py-4 border-t">
+        <div id="paginationContainer" class="pagination-box"></div>
+        
+      </div>
+
+      <div id="loadingState" class="text-center py-6"><div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-orange-500 border-t-transparent"></div></div>
+      <div id="emptyState" class="text-center py-10 hidden"><p class="text-slate-400 text-lg">No products found.</p></div>
+    </div>
+
+    <!-- FEATURED STORES SECTION -->
+    <div id="featuredStoresSection" class="mt-8 mb-4 bg-white rounded-md shadow-sm overflow-hidden hidden">
+      <div class="bg-blue-600 p-4 flex justify-between items-center text-white">
+        <div>
+          <h2 class="font-black uppercase tracking-widest text-sm sm:text-base">Featured Stores</h2>
+          <p class="text-[10px] text-blue-100 font-bold">Discover top-rated sellers and their collections</p>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      </div>
+      <div id="storesContainer" class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Stores will be loaded here -->
+      </div>
+    </div>
+  </main>
+
+  <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-16 flex items-center justify-around px-4 z-50">
+    <button onclick="location.href='index.html'" class="flex flex-col items-center gap-1 text-orange-500">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+      <span class="text-[8px] font-black uppercase">Home</span>
+    </button>
+    <!-- STORE FEATURE: Add Store button to mobile nav (NEW) -->
+    <button onclick="location.href='store-setup.html'" class="flex flex-col items-center gap-1 text-slate-500">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m10 0l2-9m-12 9h16m-8-3v6m-2-6v6"/></svg>
+      <span class="text-[8px] font-black uppercase">Store</span>
+    </button>
+    <button onclick="location.href='my-listings.html'" class="flex flex-col items-center gap-1 text-slate-500">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+      <span class="text-[8px] font-black uppercase">My List</span>
+    </button>
+    <button onclick="openFilterDrawer()" class="flex flex-col items-center gap-1 text-slate-500">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707v4.172a1 1 0 01-1.447.894L9 15.118a1 1 0 01-.553-.894V11.12a1 1 0 00-.293-.707L1.293 6.707A1 1 0 011 6V4z" /></svg>
+      <span class="text-[8px] font-black uppercase">Filter</span>
+    </button>
+    <button onclick="location.href='promote.html'" class="flex flex-col items-center gap-1 text-slate-500">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+      <span class="text-[8px] font-black uppercase">Sell</span>
+    </button>
+  </nav>
+
+  <div id="mobileFilterDrawer" class="fixed inset-0 z-50 hidden">
+    <div class="drawer-backdrop fixed inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
+    <div class="drawer-panel fixed inset-x-4 top-16 bottom-8 bg-white rounded-3xl shadow-2xl p-5 overflow-y-auto">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 uppercase">Filters</h3>
+          <p class="text-sm text-slate-500">Refine your search with category, price and sort options.</p>
+        </div>
+        <button onclick="closeFilterDrawer()" class="text-slate-500 hover:text-slate-900"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+      </div>
+      <div class="space-y-4">
+        <div class="space-y-2">
+          <label for="mobileCategoryFilter" class="text-xs font-black uppercase tracking-widest text-slate-500">Category</label>
+          <select id="mobileCategoryFilter" onchange="handleMobileCategoryChange(this.value)" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:border-orange-400">
+            <option value="All">All</option>
+          </select>
+        </div>
+        <div class="space-y-2">
+          <label for="mobilePriceFilter" class="text-xs font-black uppercase tracking-widest text-slate-500">Price</label>
+          <select id="mobilePriceFilter" onchange="handleMobilePriceChange(this.value)" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:border-orange-400">
+            <option value="all">All</option>
+            <option value="0-50">₦0 - ₦50</option>
+            <option value="50-100">₦50 - ₦100</option>
+            <option value="100+">₦100+</option>
+          </select>
+        </div>
+        <div class="space-y-2">
+          <label for="mobileSortSelect" class="text-xs font-black uppercase tracking-widest text-slate-500">Sort</label>
+          <select id="mobileSortSelect" onchange="handleMobileSortChange(this.value)" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:border-orange-400">
+            <option value="newest">Newest</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="popularity">Popularity</option>
+          </select>
+        </div>
+        <button onclick="closeFilterDrawer()" class="w-full rounded-full bg-orange-500 text-white py-3 font-bold uppercase tracking-widest hover:bg-orange-600 transition">Apply filters</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-slate-950 text-slate-300 mt-6 pt-8 pb-6">
+    <div class="max-w-7xl mx-auto px-4 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <h3 class="text-white font-bold uppercase text-sm mb-3">Kentai Marketplace</h3>
+        <p class="text-sm text-slate-400">A trusted local marketplace for buying and selling quality goods with ease.</p>
+      </div>
+      <div>
+        <h4 class="text-white font-semibold uppercase text-xs mb-3">Links</h4>
+        <ul class="space-y-2 text-sm text-slate-400">
+          <li><a href="about.html" class="hover:text-white">About</a></li>
+          <li><a href="contact.html" class="hover:text-white">Contact</a></li>
+          <li><a href="terms.html" class="hover:text-white">Terms</a></li>
+          <li><a href="privacy.html" class="hover:text-white">Privacy</a></li>
+          <li><a href="faq.html" class="hover:text-white">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-white font-semibold uppercase text-xs mb-3">Support</h4>
+        <ul class="space-y-2 text-sm text-slate-400">
+          <li><a href="my-listings.html" class="hover:text-white">My Listings</a></li>
+          <li><a href="promote.html" class="hover:text-white">Promote</a></li>
+          <li><a href="questions-replies.html" class="hover:text-white">Questions</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-white font-semibold uppercase text-xs mb-3">Contact</h4>
+        <p class="text-sm text-slate-400">fakowajokehinde777@gmail.com</p>
+        <p class="text-sm text-slate-400">+234 7049412363</p>
+      </div>
+    </div>
+    <div class="mt-10 border-t border-slate-800 pt-6 text-center text-slate-500 text-xs">© 2026 Kentai Marketplace. All rights reserved.</div>
+  </footer>
+
+  <script>
+    const carouselData = [
+      { img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200&h=500&fit=crop", title: "Electronics & Gadgets", text: "From smartphones to laptops, find the latest tech at unbeatable prices on Kentai Marketplace." },
+      { img: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1200&h=500&fit=crop", title: "Fashion & Apparel", text: "Trending styles, designer collections, and everyday essentials — all in one place." },
+      { img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&h=500&fit=crop", title: "Home & Living", text: "Transform your living space with curated furniture, decor, and smart home solutions." },
+      { img: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=1200&h=500&fit=crop", title: "Beauty & Skincare", text: "Premium skincare routines, makeup collections, and beauty treatments from trusted brands." },
+      { img: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1200&h=500&fit=crop", title: "Kitchen & Dining", text: "Professional-grade cookware and elegant dinnerware to elevate your culinary experience." },
+      { img: "https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=1200&h=500&fit=crop", title: "Toys & Games", text: "Educational toys, board games, and interactive playsets for children of every age." },
+      { img: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=1200&h=500&fit=crop", title: "Pet Supplies", text: "Everything your furry friends need — food, toys, accessories, and grooming essentials." },
+      { img: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=1200&h=500&fit=crop", title: "Watches & Jewelry", text: "Luxury watches, handcrafted rings, and artisan accessories that make every moment special." },
+      { img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&h=500&fit=crop", title: "Food & Beverages", text: "Organic snacks, gourmet food, premium coffee, and artisan drinks delivered to your door." },
+      { img: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=1200&h=500&fit=crop", title: "Sports & Outdoors", text: "Gym equipment, camping gear, cycling accessories, and everything for your active lifestyle." }
+    ];
+    let autoSlide;
+    let carouselIndex = 0;
+    function initCarousel() {
+      const track = document.getElementById("carouselTrack");
+      track.innerHTML = carouselData.map(item => `
+        <div class="carousel-slide">
+          <img src="${item.img}?auto=format&fit=crop&w=1200&q=80" class="w-full h-full object-cover">
+          <div class="carousel-overlay">
+            <h2 class="text-3xl sm:text-6xl font-black uppercase mb-4 leading-tight">${item.title}</h2>
+            <p class="text-sm sm:text-2xl font-semibold text-slate-100 max-w-xl">${item.text}</p>
+            <button onclick="location.href='promote.html'" class="mt-8 w-fit px-10 py-4 jumia-orange text-white font-black rounded-full shadow-2xl hover:scale-110 transition uppercase text-xs sm:text-sm">Sell Now</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    function moveCarousel(dir) {
+      const track = document.getElementById("carouselTrack");
+      if (!track) return;
+      const slides = track.children.length;
+      if (slides <= 1) return;
+      carouselIndex = (carouselIndex + dir + slides) % slides;
+      track.style.transform = `translateX(-${carouselIndex * 100}%)`;
+      if (typeof autoSlide !== 'undefined' && autoSlide !== null) {
+        clearInterval(autoSlide);
+      }
+      autoSlide = window.setInterval(() => moveCarousel(1), 5000);
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        moveCarousel(-1);
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        moveCarousel(1);
+      }
+    });
+    function setupCarousel() {
+      initCarousel();
+      const track = document.getElementById("carouselTrack");
+      const slides = track ? track.children.length : 0;
+      if (slides > 1) {
+        autoSlide = window.setInterval(() => moveCarousel(1), 6000);
+      }
+      const carouselContainer = document.querySelector('.carousel-container');
+      if (carouselContainer) {
+        carouselContainer.addEventListener('mouseenter', () => {
+          if (typeof autoSlide !== 'undefined' && autoSlide !== null) window.clearInterval(autoSlide);
+        });
+        carouselContainer.addEventListener('mouseleave', () => {
+          if (typeof autoSlide !== 'undefined' && autoSlide !== null) window.clearInterval(autoSlide);
+          autoSlide = window.setInterval(() => moveCarousel(1), 5000);
+        });
+      }
+      const buttons = document.querySelectorAll('.carousel-btn');
+      buttons.forEach(btn => {
+        btn.style.position = 'absolute';
+        btn.style.top = '50%';
+        btn.style.transform = 'translateY(-50%)';
+      });
+    }
+    setupCarousel();
+    window.addEventListener("load", () => {
+      if (window.firebaseApp && window.firebaseApp.auth) {
+        window.firebaseApp.auth.onAuthStateChanged(async user => {
+          if (!user) { window.location.href = "auth.html"; }
+          else {
+            window.feedModule.fetchAndRender();
+            const doc = await window.firebaseApp.db.collection("users").doc(user.uid).get();
+            const points = (doc.data() && doc.data().points) || 0;
+            document.getElementById("navPoints").textContent = points;
+          }
+        });
+      }
+    });
+    function openFilterDrawer() {
+      const drawer = document.getElementById('mobileFilterDrawer');
+      if (drawer) drawer.classList.remove('hidden');
+      const category = document.getElementById('categoryFilter')?.value;
+      const price = document.getElementById('priceFilter')?.value;
+      const sort = document.getElementById('sortSelect')?.value;
+      if (category) document.getElementById('mobileCategoryFilter').value = category;
+      if (price) document.getElementById('mobilePriceFilter').value = price;
+      if (sort) document.getElementById('mobileSortSelect').value = sort;
+    }
+    function closeFilterDrawer() {
+      const drawer = document.getElementById('mobileFilterDrawer');
+      if (drawer) drawer.classList.add('hidden');
+    }
+    function handleMobileCategoryChange(value) {
+      window.feedModule.handleCategoryFilter(value);
+      const desktopSelect = document.getElementById('categoryFilter');
+      if (desktopSelect) desktopSelect.value = value;
+    }
+    function handleMobilePriceChange(value) {
+      window.feedModule.handlePriceFilter(value);
+      const desktopSelect = document.getElementById('priceFilter');
+      if (desktopSelect) desktopSelect.value = value;
+    }
+    function handleMobileSortChange(value) {
+      window.feedModule.handleSort(value);
+      const desktopSelect = document.getElementById('sortSelect');
+      if (desktopSelect) desktopSelect.value = value;
+    }
+    function handleLogout() { window.firebaseApp.auth.signOut().then(() => window.location.href = "auth.html"); }
+  </script>
+</body>
+</html>

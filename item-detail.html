@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Item Details | Kentai Marketplace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="utils.js"></script>
+  <script src="auth.js"></script>
+  <script src="detail.js"></script>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" );
+    body { font-family: "Inter", sans-serif; }
+    .jumia-orange { background-color: #f68b1e; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <nav class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <button onclick="goBack()" class="flex items-center gap-2 text-slate-600 hover:text-orange-600 font-bold transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+        Back
+      </button>
+      <span class="text-xl font-black text-orange-900 uppercase tracking-tighter">Kentai Marketplace</span>
+      <div id="editActionContainer"></div>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 sm:py-10">
+    <div id="ownerTools"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+      <!-- Image Gallery Section -->
+      <div class="flex flex-col gap-4">
+        <div class="rounded-3xl overflow-hidden shadow-xl border border-slate-200 bg-white h-[350px] sm:h-[500px] relative">
+          <img id="itemImage" src="" class="w-full h-full object-contain transition-opacity duration-200">
+          <div id="promotionBadge" class="absolute top-4 right-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-bold shadow-lg hidden">
+            <div>Promoted</div>
+            <div id="countdownTimer" class="text-xs mt-1"></div>
+          </div>
+        </div>
+
+        <div id="thumbnailGallery" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar hidden"></div>
+      </div>
+
+      <!-- Item Details Section -->
+      <div class="flex flex-col">
+        <div class="mb-6">
+          <div class="flex items-center gap-3 mb-4 flex-wrap">
+            <span id="itemCategory" class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-black uppercase"></span>
+            <span id="itemStatusBadge" class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider"></span>
+            <span id="ownerBadge" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-700 hidden"></span>
+          </div>
+          <h1 id="itemTitle" class="text-3xl sm:text-5xl font-black text-slate-900 mb-4 uppercase tracking-tight"></h1>
+          <div id="itemPrice" class="mb-4"></div>
+        </div>
+
+        <div class="mb-8 p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
+          <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Description</h2>
+          <p id="itemDescription" class="text-slate-600 leading-relaxed text-sm sm:text-base"></p>
+        </div>
+
+        <div class="p-5 bg-white rounded-3xl border border-slate-100 mb-8 flex items-center gap-4">
+          <div class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </div>
+          <div>
+            <p class="text-[10px] font-black text-slate-400 uppercase">Pickup Location</p>
+            <p id="itemAddress" class="text-slate-900 font-bold text-sm"></p>
+          </div>
+        </div>
+
+        <div class="bg-indigo-900 rounded-[2.5rem] p-6 sm:p-10 text-white shadow-2xl">
+          <h3 class="text-xs font-black uppercase tracking-widest text-indigo-300 mb-6 text-center">Contact Seller Securely</h3>
+          <div class="grid grid-cols-1 gap-3">
+            <a id="callBtn" href="" class="flex items-center justify-center gap-3 bg-white text-indigo-900 font-black py-4 rounded-2xl hover:bg-indigo-50 transition text-sm uppercase">Call Seller</a>
+            <a id="whatsappBtn" href="" target="_blank" class="hidden flex items-center justify-center gap-3 bg-green-500 text-white font-black py-4 rounded-2xl hover:bg-green-600 transition text-sm uppercase">WhatsApp</a>
+          </div>
+          
+          <div id="socialHub" class="mt-8 space-y-4">
+            <!-- Social Links will be injected here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat & Reviews Sections -->
+    <div class="mt-12 sm:mt-20 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-white rounded-3xl border border-slate-100 p-6 sm:p-10">
+            <h2 class="text-2xl font-black text-slate-900 mb-6 uppercase">Questions</h2>
+            <div id="conversationsContainer" class="bg-slate-50 rounded-2xl p-4 mb-6 h-80 overflow-y-auto space-y-3 border border-slate-100">
+                <p class="text-slate-400 text-center py-8 text-xs font-bold uppercase">Loading...</p>
+            </div>
+            <div class="space-y-4">
+                <div id="messageReplyIndicator" class="hidden"></div>
+                <textarea id="messageInput" placeholder="Ask a question..." class="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm" rows="3"></textarea>
+                <button onclick="submitMessage()" class="w-full jumia-orange text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest">Send Message</button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-100 p-6 sm:p-10">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-black text-slate-900 uppercase">Reviews</h2>
+                <div id="ratingsSummary" class="text-right">
+                    <div class="flex items-center gap-2 justify-end">
+                        <div id="averageRating" class="text-3xl font-black text-slate-900">-</div>
+                        <div class="flex text-yellow-400 text-xl">★★★★★</div>
+                    </div>
+                    <p id="reviewCount" class="text-xs text-slate-400 font-bold uppercase">0 reviews</p>
+                </div>
+            </div>
+            <div id="ratingBreakdown" class="grid grid-cols-5 gap-2 mb-6 text-center">
+                <div class="text-[10px]">
+                    <div class="font-black text-slate-900">5★</div>
+                    <div id="breakdown5" class="bg-slate-100 h-8 rounded flex items-center justify-center text-xs text-slate-400">0</div>
+                </div>
+                <div class="text-[10px]">
+                    <div class="font-black text-slate-900">4★</div>
+                    <div id="breakdown4" class="bg-slate-100 h-8 rounded flex items-center justify-center text-xs text-slate-400">0</div>
+                </div>
+                <div class="text-[10px]">
+                    <div class="font-black text-slate-900">3★</div>
+                    <div id="breakdown3" class="bg-slate-100 h-8 rounded flex items-center justify-center text-xs text-slate-400">0</div>
+                </div>
+                <div class="text-[10px]">
+                    <div class="font-black text-slate-900">2★</div>
+                    <div id="breakdown2" class="bg-slate-100 h-8 rounded flex items-center justify-center text-xs text-slate-400">0</div>
+                </div>
+                <div class="text-[10px]">
+                    <div class="font-black text-slate-900">1★</div>
+                    <div id="breakdown1" class="bg-slate-100 h-8 rounded flex items-center justify-center text-xs text-slate-400">0</div>
+                </div>
+            </div>
+            <div id="reviewsContainer" class="space-y-4 mb-8">
+                <p class="text-slate-400 text-center py-8 text-xs font-bold uppercase">No reviews yet.</p>
+            </div>
+            <div class="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                <div id="reviewReplyIndicator" class="hidden"></div>
+                <div class="flex gap-2 mb-4 justify-center">
+                    <button onclick="setRating(1)" class="star-btn text-3xl text-slate-200">★</button>
+                    <button onclick="setRating(2)" class="star-btn text-3xl text-slate-200">★</button>
+                    <button onclick="setRating(3)" class="star-btn text-3xl text-slate-200">★</button>
+                    <button onclick="setRating(4)" class="star-btn text-3xl text-slate-200">★</button>
+                    <button onclick="setRating(5)" class="star-btn text-3xl text-slate-200">★</button>
+                </div>
+                <input type="hidden" id="ratingValue" value="0">
+                <textarea id="reviewInput" placeholder="Share your experience..." class="w-full px-5 py-4 bg-white border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm mb-4" rows="2"></textarea>
+                <button onclick="submitReview()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest">Post Review</button>
+            </div>
+        </div>
+    </div>
+  </main>
+
+  <script>
+    function goBack() {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = 'index.html';
+      }
+    }
+    function setRating(r) {
+        document.getElementById('ratingValue').value = r;
+        document.querySelectorAll('.star-btn').forEach((btn, i) => {
+            btn.classList.toggle('text-yellow-400', i < r);
+            btn.classList.toggle('text-slate-200', i >= r);
+        });
+    }
+  </script>
+</body>
+</html>

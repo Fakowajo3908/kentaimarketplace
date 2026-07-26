@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us |Kentai Marketplace</title>
+  
+  <meta name="theme-color" content="#f68b1e">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kentai Marketplace">
+  <link rel="apple-touch-icon" href="https://via.placeholder.com/192?text=Kentai Marketplace">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="utils.js"></script>
+  <script src="auth.js"></script>
+  <script src="feed.js"></script>
+  <script>
+    window.addEventListener("load", () => {
+      if (window.firebaseApp && window.firebaseApp.auth) {
+        window.firebaseApp.auth.onAuthStateChanged(async user => {
+          if (user) {
+            const doc = await window.firebaseApp.db.collection("users").doc(user.uid).get();
+            const points = (doc.data() && doc.data().points) || 0;
+            const navPoints = document.getElementById("navPoints");
+            if (navPoints) navPoints.textContent = points;
+          }
+        });
+      }
+    });
+
+    function handleLogout() { 
+      if (window.firebaseApp && window.firebaseApp.auth) {
+        window.firebaseApp.auth.signOut().then(() => window.location.href = "auth.html"); 
+      }
+    }
+  </script>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+    body { font-family: "Inter", sans-serif; background-color: #f8fafc; color: #1e293b; }
+    .jumia-orange { background-color: #f68b1e; }
+    .jumia-text-orange { color: #f68b1e; }
+    .contact-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .contact-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
+    .form-input:focus { border-color: #f68b1e; ring-color: #f68b1e; }
+    
+    #successToast {
+      transform: translateY(100%);
+      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #successToast.show {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body class="pb-20 md:pb-0">
+
+  <header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2 cursor-pointer flex-shrink-0" onclick="location.href='index.html'">
+        <div class="w-10 h-10 jumia-orange rounded-lg flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+        </div>
+        <span class="font-black text-slate-900 text-xl tracking-tighter hidden md:inline uppercase">Kentai Marketplace</span>
+      </div>
+
+      <div class="flex-1 max-w-xl relative hidden md:block">
+        <input type="text" id="searchInput" oninput="window.feedModule.handleSearch(this.value)" placeholder="Search products..." class="w-full pl-10 pr-4 py-2 rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-4">
+        <div class="flex items-center gap-1 sm:gap-2 bg-orange-50 px-2 sm:px-3 py-1.5 rounded-full border border-orange-200">
+          <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+          <span class="text-orange-600 font-black text-xs sm:text-sm" id="navPoints">0</span>
+        </div>
+        <button onclick="location.href='my-listings.html'" class="hidden sm:flex items-center gap-2 text-slate-600 hover:text-orange-600 font-black uppercase text-[10px] tracking-widest transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            My List
+        </button>
+        <button onclick="location.href='promote.html'" class="jumia-orange text-white px-3 sm:px-5 py-2 rounded-md font-bold text-xs sm:text-sm hover:opacity-90 transition uppercase tracking-wide">Sell</button>
+        <button onclick="handleLogout()" class="p-2 text-slate-500 hover:text-red-600 transition"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-12">
+    <div class="text-center mb-16">
+      <h1 class="text-4xl font-extrabold text-slate-900 sm:text-5xl mb-4">Get in Touch</h1>
+      <p class="text-lg text-slate-600 max-w-2xl mx-auto">Have questions or need assistance? Our dedicated team is here to help you make the most of your Kentai Marketplace experience.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+      <div class="contact-card bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center">
+        <div class="w-14 h-14 bg-orange-100 rounded-full flex items-center justify-center mb-6">
+          <svg class="w-7 h-7 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Email Us</h3>
+        <p class="text-slate-500 mb-4">Our support team is ready to assist you via email.</p>
+        <a href="mailto:fakowajokehinde777@gmail.com" class="text-orange-600 font-semibold hover:underline">fakowajokehinde777@gmail.com</a>
+      </div>
+
+      <div class="contact-card bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center">
+        <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mb-6">
+          <svg class="w-7 h-7 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">WhatsApp</h3>
+        <p class="text-slate-500 mb-4">Chat with us directly on WhatsApp for instant support.</p>
+        <button onclick="window.open('https://wa.me/2347049412363', '_blank')" class="bg-green-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-green-700 transition flex items-center gap-2">
+          Start Chat
+        </button>
+      </div>
+
+      <div class="contact-card bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center">
+        <div class="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+          <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">Office</h3>
+        <p class="text-slate-500 mb-4">Visit us at our headquarters for a coffee.</p>
+        <address class="text-slate-600 not-italic">Lagos, Nigeria</address>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-2">
+      <div class="p-8 sm:p-12">
+        <h2 class="text-3xl font-bold text-slate-900 mb-6">Send us a message</h2>
+        <form id="contactForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2">First Name</label>
+              <input type="text" id="firstName" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition" placeholder="John">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2">Last Name</label>
+              <input type="text" id="lastName" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition" placeholder="Doe">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
+            <input type="email" id="email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition" placeholder="john@example.com">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Subject</label>
+            <input list="subjectOptions" id="subject" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition" placeholder="Select or type a subject">
+            <datalist id="subjectOptions">
+              <option value="General Inquiry">
+              <option value="Technical Support">
+              <option value="Account Access Issue">
+              <option value="Billing and Payments">
+              <option value="Reporting a Listing">
+              <option value="Reporting a User">
+              <option value="Business Partnership">
+              <option value="Media/Press Inquiry">
+              <option value="Careers/Jobs">
+              <option value="Advertising Opportunities">
+              <option value="Item Not Received">
+              <option value="Item Not as Described">
+              <option value="Seller/Buyer Dispute">
+              <option value="Promoted Listings Inquiry">
+              <option value="Feature Request">
+              <option value="Bug Report">
+              <option value="Privacy Policy Question">
+              <option value="Terms of Service Question">
+              <option value="Verification Help">
+              <option value="Other">
+            </datalist>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Message</label>
+            <textarea id="message" rows="4" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition" placeholder="Your message here..."></textarea>
+          </div>
+          <button type="submit" class="w-full jumia-orange text-white py-4 rounded-xl font-bold text-lg hover:opacity-90 transition shadow-lg shadow-orange-500/30">Send Message</button>
+        </form>
+      </div>
+      <div class="bg-slate-900 p-8 sm:p-12 text-white flex flex-col justify-between">
+        <div>
+          <h2 class="text-3xl font-bold mb-8">Contact Information</h2>
+          <div class="space-y-8">
+            <div class="flex items-start gap-4">
+              <svg class="w-6 h-6 text-orange-500 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <div>
+                <p class="font-bold">Our Location</p>
+                <p class="text-slate-400">Kentai Marketplace, Lagos, Nigeria</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-4">
+              <svg class="w-6 h-6 text-orange-500 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+              <div>
+                <p class="font-bold">Phone Number</p>
+                <p class="text-slate-400">+234 (0) 704 941 2363</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-4">
+              <svg class="w-6 h-6 text-orange-500 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <div>
+                <p class="font-bold">Working Hours</p>
+                <p class="text-slate-400">Mon - Fri: 9:00 AM - 6:00 PM</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-12">
+          <p class="font-bold mb-4">Follow Us</p>
+          <div class="flex gap-4">
+            <a href="#" class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-orange-500 transition"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+            <a href="#" class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-orange-500 transition"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.84 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg></a>
+            <a href="#" class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-orange-500 transition"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="successToast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] bg-white rounded-2xl shadow-2xl p-6 border border-green-100 flex items-center gap-4 w-[90%] max-w-md hidden">
+    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+      <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <div>
+      <h4 class="font-bold text-slate-900">Message sent successfully</h4>
+      <p class="text-sm text-slate-500">We'll get back to you shortly.</p>
+    </div>
+  </div>
+
+  <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-16 flex items-center justify-around px-4 z-50">
+    <button onclick="location.href='index.html'" class="flex flex-col items-center gap-1 text-slate-500">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+      <span class="text-[8px] font-black uppercase">Home</span>
+    </button>
+    <button onclick="location.href='my-listings.html'" class="flex flex-col items-center gap-1 text-slate-500">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+      <span class="text-[8px] font-black uppercase">My List</span>
+    </button>
+    <button onclick="location.href='promote.html'" class="flex flex-col items-center gap-1 text-slate-500">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+      <span class="text-[8px] font-black uppercase">Sell</span>
+    </button>
+  </nav>
+
+  <footer class="bg-white border-t border-slate-200 py-12">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+        <div class="col-span-1 md:col-span-2">
+          <div class="flex items-center gap-2 mb-6">
+            <div class="w-8 h-8 jumia-orange rounded flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+            </div>
+            <span class="font-black text-slate-900 text-xl tracking-tighter uppercase">Kentai Marketplace</span>
+          </div>
+          <p class="text-slate-500 mb-6 max-w-sm">The leading marketplace for unique finds and sustainable shopping. Connect, discover, and trade with confidence.</p>
+        </div>
+        <div>
+          <h4 class="font-bold text-slate-900 uppercase tracking-widest text-xs mb-6">Company</h4>
+          <ul class="space-y-4 text-sm">
+            <li><a href="about.html" class="text-slate-500 hover:text-orange-600 transition">About Us</a></li>
+            <li><a href="contact.html" class="text-slate-500 hover:text-orange-600 transition">Contact</a></li>
+            <li><a href="faq.html" class="text-slate-500 hover:text-orange-600 transition">FAQ</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-bold text-slate-900 uppercase tracking-widest text-xs mb-6">Legal</h4>
+          <ul class="space-y-4 text-sm">
+            <li><a href="terms.html" class="text-slate-500 hover:text-orange-600 transition">Terms of Service</a></li>
+            <li><a href="privacy.html" class="text-slate-500 hover:text-orange-600 transition">Privacy Policy</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="pt-8 border-t border-slate-100 text-center">
+        <p class="text-slate-400 text-xs">© 2026 Kentai Marketplace. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function handleFormSubmit(event) {
+      event.preventDefault();
+      
+      const toast = document.getElementById('successToast');
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('show'), 10);
+      
+      // Clear form
+      document.getElementById('contactForm').reset();
+      
+      // Hide toast after 4 seconds
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.classList.add('hidden'), 500);
+      }, 4000);
+    }
+  </script>
+
+</body>
+</html>

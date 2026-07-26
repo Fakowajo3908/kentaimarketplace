@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms and Conditions |Kentai Marketplace</title>
+  
+  <meta name="theme-color" content="#f68b1e">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kentai Marketplace">
+  <link rel="apple-touch-icon" href="https://via.placeholder.com/192?text=Kentai Marketplace  ">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="utils.js"></script>
+  <script src="auth.js"></script>
+  <script src="feed.js"></script>
+  <script>
+    window.addEventListener("load", () => {
+      if (window.firebaseApp && window.firebaseApp.auth) {
+        window.firebaseApp.auth.onAuthStateChanged(async user => {
+          if (user) {
+            const doc = await window.firebaseApp.db.collection("users").doc(user.uid).get();
+            const points = (doc.data() && doc.data().points) || 0;
+            const navPoints = document.getElementById("navPoints");
+            if (navPoints) navPoints.textContent = points;
+          }
+        });
+      }
+    });
+
+    function handleLogout() { 
+      if (window.firebaseApp && window.firebaseApp.auth) {
+        window.firebaseApp.auth.signOut().then(() => window.location.href = "auth.html"); 
+      }
+    }
+  </script>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" );
+    body { font-family: "Inter", sans-serif; background-color: #f1f1f2; padding-bottom: 70px; }
+    @media (min-width: 768px) { body { padding-bottom: 0; } }
+    .jumia-orange { background-color: #f68b1e; }
+    .jumia-text-orange { color: #f68b1e; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body>
+
+  <header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2 cursor-pointer flex-shrink-0" onclick="location.href='index.html'">
+        <div class="w-10 h-10 jumia-orange rounded-lg flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+        </div>
+        <span class="font-black text-slate-900 text-xl tracking-tighter hidden md:inline uppercase">Kentai Marketplace</span>
+      </div>
+
+      <div class="flex-1 max-w-xl relative hidden md:block">
+        <input type="text" id="searchInput" oninput="window.feedModule.handleSearch(this.value)" placeholder="Search products..." class="w-full pl-10 pr-4 py-2 rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-4">
+        <div class="flex items-center gap-1 sm:gap-2 bg-orange-50 px-2 sm:px-3 py-1.5 rounded-full border border-orange-200">
+          <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+          <span class="text-orange-600 font-black text-xs sm:text-sm" id="navPoints">0</span>
+        </div>
+        <button onclick="location.href='my-listings.html'" class="hidden sm:flex items-center gap-2 text-slate-600 hover:text-orange-600 font-black uppercase text-[10px] tracking-widest transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            My List
+        </button>
+        <button onclick="location.href='promote.html'" class="jumia-orange text-white px-3 sm:px-5 py-2 rounded-md font-bold text-xs sm:text-sm hover:opacity-90 transition uppercase tracking-wide">Sell</button>
+        <button onclick="handleLogout()" class="p-2 text-slate-500 hover:text-red-600 transition"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-3 sm:px-4 py-4">
+    <div class="bg-white rounded-md shadow-sm p-4">
+      <h1 class="text-2xl font-bold text-slate-800 mb-4">Kentai Marketplace Terms and Conditions</h1>
+      <p class="text-slate-700 mb-4">Welcome to Kentai Marketplace. These Terms and Conditions ("Terms") govern your access to and use of the Kentai Marketplace website, applications, and services (collectively, the "Service"). By accessing or using the Service, you agree to be bound by these Terms and our Privacy Policy. If you do not agree to these Terms, please do not use our Service.</p>
+
+      <h2 class="text-xl font-bold text-slate-800 mb-3">1. Acceptance of Terms</h2>
+      <p class="text-slate-700 mb-4">By creating an account, listing an item, or making a purchase on Kentai Marketplace, you signify your acceptance of these Terms. We may modify these Terms at any time by posting the revised Terms on our Service. Your continued use of the Service after such changes constitutes your acceptance of the new Terms.</p>
+
+      <h2 class="text-xl font-bold text-slate-800 mb-3">2. User Accounts</h2>
+      <p class="text-slate-700 mb-4">To access certain features of the Service, you may be required to create an account. You are responsible for maintaining the confidentiality of your account information and for all activities that occur under your account. You agree to notify Kentai Marketplace immediately of any unauthorized use of your account.</p>
+
+      <h2 class="text-xl font-bold text-slate-800 mb-3">3. Listing and Selling</h2>
+      <p class="text-slate-700 mb-4">When listing items for sale on Kentai Marketplace, you agree to:</p>
+      <ul class="list-disc list-inside text-slate-700 mb-4 ml-4">
+        <li>Provide accurate and complete descriptions of your items.</li>
+        <li>Set fair and reasonable prices.</li>
+        <li>Comply with all applicable laws and regulations regarding the sale of your items.</li>
+        <li>Ensure that your items do not infringe on any third-party rights.</li>
+      </ul>
+      <p class="text-slate-700 mb-4">Kentai Marketplace reserves the right to remove any listings that violate these Terms or are deemed inappropriate.</p>
+
+      <h2 class="text-xl font-bold text-slate-800 mb-3">4. Buying and Transactions</h2>
+      <p class="text-slate-700 mb-4">When purchasing items on Kentai Marketplace, you agree to:</p>
+      <ul class="list-disc list-inside text-slate-700 mb-4 ml-4">
+        <li>Review item descriptions carefully before making a purchase.</li>
+        <li>Make timely payments for all purchased items.</li>
+        <li>Communicate respectfully with sellers.</li>
+      </ul>
+      <p class="text-slate-700 mb-4">Kentai Marketplace facilitates transactions but is not a party to the actual contract of sale between buyers and sellers.</p>
+
+      <h2 class="text-xl font-bold text-slate-800 mb-3">5. Prohibited Conduct</h2>
+      <p class="text-slate-700 mb-4">You agree not to:</p>
+      <ul class="list-disc list-inside text-slate-700 mb-4 ml-4">
+        <li>Use the Service for any illegal or unauthorized purpose.</li>
+        <li>Interfere with the proper working of the Service.</li>
+        <li>Upload or transmit viruses or any other malicious code.</li>
+        <li>Harass, abuse, or harm another person.</li>
+        <li>Collect or store personal data about other users without their consent.</li>
+      </ul>
+
+      <h2 class="text-xl font-bold text-slate-800 mb-3">6. Intellectual Property</h2>
+      <p class="text-slate-700 mb-4">All content on Kentai Marketplace, including text, graphics, logos, and images, is the property of Kentai Marketplace or its content suppliers and is protected by intellectual property laws. You may not use any content from the Service without our express written permission.</p>
+
+      <h2 class="text-xl font-bold text-slate-800 mb-3">7. Disclaimers and Limitation of Liability</h2>
+      <p class="text-slate-700 mb-4">Kentai Marketplace provides the Service on an "as is" and "as available" basis. We do not warrant that the Service will be uninterrupted, error-free, or secure. To the fullest extent permitted by law, Kentai Marketplace disclaims all warranties, express or implied, and shall not be liable for any damages arising from your use of the Service.</p>
+
+      <h2 class="text-xl font-bold text-slate-800 mb-3">8. Governing Law</h2>
+      <p class="text-slate-700 mb-4">These Terms shall be governed by and construed in accordance with the laws of [Your Country/State], without regard to its conflict of law principles.</p>
+
+      <h2 class="text-xl font-bold text-slate-800 mb-3">9. Contact Information</h2>
+      <p class="text-slate-700">If you have any questions about these Terms, please contact us at fakowajokehinde777@gmail.com.</p>
+    </div>
+  </main>
+
+  <footer class="bg-white shadow-sm mt-8 py-6">
+    <div class="max-w-7xl mx-auto px-4 text-center text-slate-500 text-sm">
+      <p>&copy; 2026 Kentai Marketplace. All rights reserved.</p>
+      <div class="flex justify-center space-x-4 mt-2">
+        <a href="about.html" class="hover:text-orange-600">About</a>
+        <a href="contact.html" class="hover:text-orange-600">Contact</a>
+        <a href="terms.html" class="hover:text-orange-600">Terms</a>
+        <a href="privacy.html" class="hover:text-orange-600">Privacy</a>
+        <a href="faq.html" class="hover:text-orange-600">FAQ</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "Arshad Marketplace",
+  "short_name": "Arshad",
+  "description": "Premium Marketplace for everything you need.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f68b1e",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192?text=Arshad",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512?text=Arshad",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
