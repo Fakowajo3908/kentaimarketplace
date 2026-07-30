@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arshad-cache-v1';
+const CACHE_NAME = 'kentai-cache-v1';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -13,7 +13,10 @@ const urlsToCache = [
   '/promote.js',
   '/detail.js',
   '/upload.js',
-  '/firebase-config.js'
+  '/firebase-config.js',
+  '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png'
 ];
 
 self.addEventListener('install', event => {
