@@ -45,7 +45,7 @@ window.feedModule = {
       });
 
       this.currentPage = 1;
-      this.renderSidebar();
+
       this.renderCategoryTabs();
       this.renderFeed();
       this.startGlobalTimers();
@@ -320,20 +320,11 @@ window.feedModule = {
       </div>`;
   },
 
-  renderSidebar() {
-    const categories = ['All', ...new Set(this.allListings.map(item => item.category).filter(Boolean))];
-    const container = document.getElementById('categorySidebar');
-    if (!container) return;
-    container.innerHTML = categories.map(cat => `
-      <div onclick="window.feedModule.filterByCategory('${cat}')" class="sidebar-item flex items-center gap-3 p-2.5 rounded cursor-pointer text-sm font-medium text-slate-600 transition ${cat === this.currentCategory ? 'jumia-text-orange bg-white shadow-sm font-bold' : ''}">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-        ${cat}
-      </div>`  ).join('');
-  },
+
 
   renderCategoryTabs() {
     const categories = ['All', ...new Set(this.allListings.map(item => item.category).filter(Boolean))];
-    const container = document.getElementById('categoryTabs');
+
     const select = document.getElementById('categoryFilter');
     const mobileSelect = document.getElementById('mobileCategoryFilter');
     const options = categories.map(cat => `
@@ -352,7 +343,7 @@ window.feedModule = {
   filterByCategory(cat) {
     this.currentCategory = cat;
     this.currentPage = 1;
-    this.renderSidebar();
+
     this.renderCategoryTabs();
     this.renderFeed();
   },
