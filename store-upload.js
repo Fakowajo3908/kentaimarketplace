@@ -3,11 +3,13 @@ window.storeUploadModule = {
     userStore: null,
     productImages: [null, null, null],
     paymentInProgress: false, // Track if payment is in progress
+    rewardDate: null,
 
     init() {
         window.firebaseApp.auth.onAuthStateChanged(async user => {
             if (!user) { window.location.href = 'auth.html'; return; }
             this.currentUser = user;
+            this.rewardDate = new URLSearchParams(window.location.search).get('rewardDate');
             const userDoc = await window.firebaseApp.db.collection('users').doc(user.uid).get();
             if (userDoc.exists) this.userStore = userDoc.data();
         });
@@ -37,7 +39,7 @@ window.storeUploadModule = {
         const priceInput = document.getElementById('itemPrice');
         const discountInput = document.getElementById('itemDiscount');
         const currencyInput = document.getElementById('itemCurrency');
-        
+
         if (priceInput) priceInput.addEventListener('input', () => this.calculateDiscount());
         if (discountInput) discountInput.addEventListener('input', () => this.calculateDiscount());
         if (currencyInput) currencyInput.addEventListener('change', () => this.calculateDiscount());
@@ -47,18 +49,18 @@ window.storeUploadModule = {
         const priceInput = document.getElementById('itemPrice');
         const discountInput = document.getElementById('itemDiscount');
         const previewDiv = document.getElementById('discountPreview');
-        
+
         if (!priceInput || !discountInput || !previewDiv) return;
 
         const price = parseFloat(priceInput.value) || 0;
         const discount = parseFloat(discountInput.value) || 0;
-        
+
         const currency = document.getElementById('itemCurrency').value || 'NGN';
         const currencySymbols = {
             'USD': '$', 'EUR': '€', 'GBP': '£', 'NGN': '₦'
         };
         const symbol = currencySymbols[currency] || '₦';
-        
+
         if (price > 0) {
             previewDiv.classList.remove('hidden');
             if (discount > 0) {
@@ -123,9 +125,9 @@ window.storeUploadModule = {
         const discountPercentage = parseFloat(document.getElementById('itemDiscount').value) || 0;
         const validImages = this.productImages.filter(img => img !== null);
 
-        if (!title || isNaN(price) || validImages.length === 0) { 
-            alert("Please fill all required fields and add at least one image!"); 
-            return; 
+        if (!title || isNaN(price) || validImages.length === 0) {
+            alert("Please fill all required fields and add at least one image!");
+            return;
         }
 
         const submitBtn = document.getElementById('submitBtn');
@@ -174,7 +176,7 @@ window.storeUploadModule = {
 
     payWithFlutterwave(amount, productData) {
         this.paymentInProgress = true;
-        
+
         FlutterwaveCheckout({
             public_key: "FLWPUBK-25a0431a9d73a1d16113134a9c627276-X",
             tx_ref: productData.tx_ref,
@@ -186,7 +188,7 @@ window.storeUploadModule = {
             },
             callback: async (data) => {
                 console.log("Flutterwave callback data:", data);
-                
+
                 const flutterwaveStatus = data.status ? data.status.toLowerCase().trim() : '';
                 const possibleSuccessStatuses = ['successful', 'success', 'completed'];
                 const isSuccessful = possibleSuccessStatuses.includes(flutterwaveStatus);
@@ -194,7 +196,7 @@ window.storeUploadModule = {
                 if (isSuccessful) {
                     // CRITICAL: Set this to false immediately to prevent onclose race condition
                     this.paymentInProgress = false;
-                    
+
                     try {
                         // Sanitize data for Firestore (remove undefined values)
                         const sanitizedData = JSON.parse(JSON.stringify(data));
@@ -211,16 +213,28 @@ window.storeUploadModule = {
                         if (productData.ownerId) {
                             const userRef = window.firebaseApp.db.collection("users").doc(productData.ownerId);
                             // Use window.firebase to ensure it's available
-                            const increment = (window.firebase && window.firebase.firestore) 
+                            const increment = (window.firebase && window.firebase.firestore)
                                 ? window.firebase.firestore.FieldValue.increment(1)
                                 : 1;
-                                
+
                             await userRef.update({
                                 totalProducts: increment,
                             });
                         }
 
-                        alert("✅ Payment Successful! Your product is now live.");
+                        let rewardUnlocked = false;
+                        if (this.rewardDate && window.firebaseApp.markMissedDailyRewardUploaded) {
+                            try {
+                                const unlockResult = await window.firebaseApp.markMissedDailyRewardUploaded(this.rewardDate);
+                                rewardUnlocked = Boolean(unlockResult.uploaded || unlockResult.alreadyClaimed);
+                            } catch (rewardError) {
+                                console.error('Payment succeeded, but missed reward unlock failed:', rewardError);
+                            }
+                        }
+
+                        alert(rewardUnlocked
+                            ? `Payment successful! Your product is live. ${this.rewardDate} is now ready to claim in Daily Points.`
+                            : "✅ Payment Successful! Your product is now live.");
                         window.location.href = 'store-profile.html';
                     } catch (firebaseError) {
                         console.error("Firebase update error after successful payment:", firebaseError);
@@ -230,7 +244,7 @@ window.storeUploadModule = {
                 } else {
                     this.paymentInProgress = false;
                     console.warn("Payment failed or was cancelled by Flutterwave:", data);
-                    
+
                     try {
                         await window.firebaseApp.db.collection('listings').doc(productData.id).update({
                             paymentStatus: 'failed',
@@ -239,7 +253,7 @@ window.storeUploadModule = {
                     } catch (firebaseError) {
                         console.error("Firebase update error after failed payment:", firebaseError);
                     }
-                    
+
                     alert(`Payment failed or cancelled. Status: ${data.status || 'unknown'}. Please try again.`);
                     location.reload();
                 }
@@ -250,12 +264,12 @@ window.storeUploadModule = {
                     submitBtn.disabled = false;
                     submitBtn.innerText = "Kindly Pay";
                 }
-                
+
                 // Only mark as failed if payment wasn't successful (paymentInProgress still true)
                 if (this.paymentInProgress) {
                     console.log("Payment modal closed without completion.");
                     this.paymentInProgress = false;
-                    
+
                     try {
                         await window.firebaseApp.db.collection('listings').doc(productData.id).update({
                             paymentStatus: 'cancelled',
@@ -264,7 +278,7 @@ window.storeUploadModule = {
                     } catch (firebaseError) {
                         console.error("Firebase update error after payment close:", firebaseError);
                     }
-                    
+
                     alert("Payment was cancelled. Your product was not posted.");
                 }
             }
