@@ -94,6 +94,191 @@ window.firebaseApp.getListingImpressions = async function(listingId, days = 7) {
   }
 };
 
+// Daily reward helpers
+const DAILY_REWARD_POINTS = 10;
+
+function dailyRewardDateKey(date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0')
+  ].join('-');
+}
+
+function dailyRewardWeekDates(referenceDate) {
+  const date = new Date(referenceDate);
+  const mondayOffset = (date.getDay() + 6) % 7;
+  date.setDate(date.getDate() - mondayOffset);
+  return Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(date);
+    day.setDate(date.getDate() + index);
+    return dailyRewardDateKey(day);
+  });
+}
+
+function dailyRewardReclaimableDates(claimedDates, referenceDate) {
+  const todayKey = dailyRewardDateKey(referenceDate);
+  return dailyRewardWeekDates(referenceDate)
+    .filter(dateKey => dateKey < todayKey && !claimedDates[dateKey])
+    .reduce((result, dateKey) => {
+      result[dateKey] = true;
+      return result;
+    }, {});
+}
+
+window.firebaseApp.getDailyRewardState = async function() {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  const snapshot = await db.collection('users').doc(user.uid).get();
+  const data = snapshot.exists ? snapshot.data() : {};
+  const claimedDates = (data.dailyRewards && data.dailyRewards.claimedDates) || {};
+  const uploadedDates = (data.dailyRewards && data.dailyRewards.uploadedDates) || {};
+  return {
+    points: Number(data.points || 0),
+    claimedDates,
+    uploadedDates,
+    reclaimableDates: dailyRewardReclaimableDates(claimedDates, new Date())
+  };
+};
+
+window.firebaseApp.claimDailyReward = async function() {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+
+  const dateKey = dailyRewardDateKey(new Date());
+  const userRef = db.collection('users').doc(user.uid);
+  let result;
+
+  await db.runTransaction(async transaction => {
+    const snapshot = await transaction.get(userRef);
+    const data = snapshot.exists ? snapshot.data() : {};
+    const dailyRewards = data.dailyRewards || {};
+    const claimedDates = { ...(dailyRewards.claimedDates || {}) };
+    const currentPoints = Number(data.points || 0);
+
+    if (claimedDates[dateKey]) {
+      result = {
+        alreadyClaimed: true,
+        points: currentPoints,
+        claimedDates,
+        uploadedDates: (dailyRewards.uploadedDates || {}),
+        reclaimableDates: dailyRewardReclaimableDates(claimedDates, new Date())
+      };
+      return;
+    }
+
+    claimedDates[dateKey] = true;
+    const points = currentPoints + DAILY_REWARD_POINTS;
+    transaction.set(userRef, {
+      points,
+      dailyRewards: {
+        claimedDates,
+        lastClaimedDate: dateKey,
+        updatedAt: firebase.firestore.Timestamp.now()
+      }
+    }, { merge: true });
+    result = {
+      alreadyClaimed: false,
+      points,
+      claimedDates,
+      uploadedDates: dailyRewards.uploadedDates || {},
+      reclaimableDates: dailyRewardReclaimableDates(claimedDates, new Date())
+    };
+  });
+
+  return result;
+};
+
+// Call this only after a product has been successfully written to `listings`.
+// This unlocks the exact missed date selected by the user; it does not award points yet.
+window.firebaseApp.markMissedDailyRewardUploaded = async function(dateKey) {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+
+  const now = new Date();
+  const todayKey = dailyRewardDateKey(now);
+  if (!dailyRewardWeekDates(now).includes(dateKey) || dateKey >= todayKey) {
+    throw new Error('Invalid missed reward date');
+  }
+
+  const userRef = db.collection('users').doc(user.uid);
+  let result;
+  await db.runTransaction(async transaction => {
+    const snapshot = await transaction.get(userRef);
+    const data = snapshot.exists ? snapshot.data() : {};
+    const dailyRewards = data.dailyRewards || {};
+    const claimedDates = { ...(dailyRewards.claimedDates || {}) };
+    const uploadedDates = { ...(dailyRewards.uploadedDates || {}) };
+
+    if (claimedDates[dateKey]) {
+      result = { uploaded: false, alreadyClaimed: true };
+      return;
+    }
+
+    uploadedDates[dateKey] = true;
+    transaction.set(userRef, {
+      dailyRewards: {
+        ...dailyRewards,
+        uploadedDates,
+        updatedAt: firebase.firestore.Timestamp.now()
+      }
+    }, { merge: true });
+    result = { uploaded: true, dateKey, uploadedDates };
+  });
+  return result;
+};
+
+// Awards the exact missed date only after that date has been unlocked by upload.
+window.firebaseApp.claimMissedDailyRewardForDate = async function(dateKey) {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+
+  const now = new Date();
+  const todayKey = dailyRewardDateKey(now);
+  if (!dailyRewardWeekDates(now).includes(dateKey) || dateKey >= todayKey) {
+    throw new Error('Invalid missed reward date');
+  }
+
+  const userRef = db.collection('users').doc(user.uid);
+  let result;
+  await db.runTransaction(async transaction => {
+    const snapshot = await transaction.get(userRef);
+    const data = snapshot.exists ? snapshot.data() : {};
+    const dailyRewards = data.dailyRewards || {};
+    const claimedDates = { ...(dailyRewards.claimedDates || {}) };
+    const uploadedDates = { ...(dailyRewards.uploadedDates || {}) };
+    const currentPoints = Number(data.points || 0);
+
+    if (claimedDates[dateKey]) {
+      result = { alreadyClaimed: true, points: currentPoints, claimedDates, uploadedDates };
+      return;
+    }
+    if (!uploadedDates[dateKey]) throw new Error('Upload a product for this day first');
+
+    claimedDates[dateKey] = true;
+    delete uploadedDates[dateKey];
+    const points = currentPoints + DAILY_REWARD_POINTS;
+    transaction.set(userRef, {
+      points,
+      dailyRewards: {
+        ...dailyRewards,
+        claimedDates,
+        uploadedDates,
+        lastReclaimedDate: dateKey,
+        updatedAt: firebase.firestore.Timestamp.now()
+      }
+    }, { merge: true });
+    result = {
+      alreadyClaimed: false,
+      points,
+      claimedDates,
+      uploadedDates,
+      reclaimableDates: dailyRewardReclaimableDates(claimedDates, new Date())
+    };
+  });
+  return result;
+};
+
 // ============================================
 // STORE FEATURE: Store Helper Functions (NEW)
 // ============================================
