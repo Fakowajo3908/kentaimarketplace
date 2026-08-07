@@ -20,7 +20,7 @@ async function initializeUploadPage() {
     }
     const form = document.getElementById('uploadForm');
     if (form) form.addEventListener('submit', handleFormSubmit);
-    
+
     const priceInput = document.getElementById('itemPrice');
     const discountInput = document.getElementById('itemDiscount');
     const currencySelect = document.getElementById('itemCurrency');
@@ -47,10 +47,10 @@ function calculateDiscountedPrice() {
   const priceInput = document.getElementById('itemPrice');
   const discountInput = document.getElementById('itemDiscount');
   const previewDiv = document.getElementById('discountPreview');
-  
+
   const price = parseFloat(priceInput.value) || 0;
   const discount = parseFloat(discountInput.value) || 0;
-  
+
   const currency = document.getElementById('itemCurrency').value || 'NGN';
   const currencySymbols = {
     'USD': '$', 'EUR': '€', 'GBP': '£', 'NGN': '₦',
@@ -60,7 +60,7 @@ function calculateDiscountedPrice() {
     'TRY': '₺', 'KWD': 'د.ك', 'QAR': 'ر.ق', 'PKR': 'Rs', 'IDR': 'Rp', 'MYR': 'RM'
   };
   const symbol = currencySymbols[currency] || '₦';
-  
+
   if (previewDiv) {
     if (price > 0) {
       previewDiv.classList.remove('hidden');
@@ -102,13 +102,13 @@ async function handleFileSelect(imageIndex) {
   const urlInput = document.getElementById(`url${imageIndex}`);
   const file = fileInput.files[0];
   if (!file) return;
-  
+
   // Clear URL input if file is selected
   if (urlInput) urlInput.value = '';
-  
+
   const preview = document.getElementById(`imagePreview${imageIndex}`);
   preview.innerHTML = '<p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Compressing...</p>';
-  
+
   try {
     const base64 = await compressImage(file);
     selectedFilesBase64[imageIndex] = base64;
@@ -128,26 +128,26 @@ function previewImage(imageIndex) {
   const fileInput = document.getElementById(`file${imageIndex}`);
   const url = urlInput.value.trim();
   const preview = document.getElementById(`imagePreview${imageIndex}`);
-  
+
   if (!url) {
     preview.innerHTML = `<p class="text-slate-400 text-[10px] text-center uppercase tracking-widest font-bold">Preview ${imageIndex}</p>`;
     selectedFilesBase64[imageIndex] = null;
     return;
   }
-  
+
   // Clear file selection if URL is entered
   if (fileInput) fileInput.value = '';
   selectedFilesBase64[imageIndex] = null;
-  
+
   const img = document.createElement('img');
   img.src = url;
   img.className = 'w-full h-full object-cover';
-  img.onload = function() { 
-    preview.innerHTML = ''; 
-    preview.appendChild(img); 
+  img.onload = function() {
+    preview.innerHTML = '';
+    preview.appendChild(img);
   };
-  img.onerror = function() { 
-    preview.innerHTML = '<p class="text-red-500 text-[10px] font-black text-center uppercase tracking-widest">Invalid URL</p>'; 
+  img.onerror = function() {
+    preview.innerHTML = '<p class="text-red-500 text-[10px] font-black text-center uppercase tracking-widest">Invalid URL</p>';
   };
   preview.innerHTML = '<p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Loading...</p>';
 }
@@ -156,6 +156,7 @@ function previewImage(imageIndex) {
 async function handleFormSubmit(event) {
   event.preventDefault();
   const user = window.firebaseApp.auth.currentUser;
+  const rewardDate = new URLSearchParams(window.location.search).get('rewardDate');
   const submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Posting...';
@@ -178,7 +179,7 @@ async function handleFormSubmit(event) {
     const discountPercentage = parseFloat(document.getElementById('itemDiscount').value) || 0;
     const discountAmount = (originalPrice * discountPercentage) / 100;
     const finalPrice = originalPrice - discountAmount;
-    
+
     // STORE FEATURE: Fetch user's store information (NEW)
     let storeId = null;
     let storeName = null;
@@ -196,7 +197,7 @@ async function handleFormSubmit(event) {
     } catch (e) {
       console.error('Error fetching store info:', e);
     }
-    
+
     const listingData = {
       title: document.getElementById('itemTitle').value.trim(),
       originalPrice: originalPrice,
@@ -234,9 +235,21 @@ async function handleFormSubmit(event) {
       storeSlug: storeSlug,
       uploadSource: 'homepage'
     };
-    
+
     await window.firebaseApp.db.collection('listings').add(listingData);
-    
+
+    // A successful upload unlocks the exact missed date selected in the reward popup.
+    // Points are not awarded until the user clicks Claim on that date's card.
+    let uploadedRewardDate = null;
+    if (rewardDate && window.firebaseApp.markMissedDailyRewardUploaded) {
+      try {
+        const unlockResult = await window.firebaseApp.markMissedDailyRewardUploaded(rewardDate);
+        if (unlockResult.uploaded || unlockResult.alreadyClaimed) uploadedRewardDate = rewardDate;
+      } catch (rewardError) {
+        console.error('Product was posted, but missed reward unlock failed:', rewardError);
+      }
+    }
+
     // STORE FEATURE: Increment store's totalProducts count (NEW)
     if (storeId) {
       try {
@@ -247,8 +260,10 @@ async function handleFormSubmit(event) {
         console.error('Error updating store product count:', e);
       }
     }
-    
-    alert("Listing posted successfully!");
+
+    alert(uploadedRewardDate
+      ? `Listing posted successfully! ${uploadedRewardDate} is now ready to claim in Daily Points.`
+      : "Listing posted successfully!");
     window.location.href = 'index.html';
   } catch (error) {
     alert("Error: " + error.message);
