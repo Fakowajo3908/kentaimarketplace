@@ -5,10 +5,11 @@
 
 let socialLinksCount = 0;
 let profileImageBase64 = null;
+const rewardDate = new URLSearchParams(window.location.search).get('rewardDate');
 
 window.addEventListener('load', async () => {
   console.log('Store setup page loading...');
-  
+
   // Wait for Firebase auth to be ready
   if (window.firebaseApp && window.firebaseApp.auth) {
     window.firebaseApp.auth.onAuthStateChanged(async (user) => {
@@ -21,7 +22,9 @@ window.addEventListener('load', async () => {
       try {
         const userDoc = await window.firebaseApp.db.collection('users').doc(user.uid).get();
         if (userDoc.exists && userDoc.data().storeCreated) {
-          window.location.href = 'store-profile.html';
+          window.location.href = rewardDate
+            ? `store-upload.html?rewardDate=${encodeURIComponent(rewardDate)}`
+            : 'store-profile.html';
           return;
         }
       } catch (e) {
@@ -41,11 +44,11 @@ window.addEventListener('load', async () => {
 function addSocialLink() {
   const container = document.getElementById('socialLinksContainer');
   const id = `social-${++socialLinksCount}`;
-  
+
   const div = document.createElement('div');
   div.className = 'flex gap-2 items-center animate-in fade-in slide-in-from-left-2 duration-300';
   div.id = id;
-  
+
   div.innerHTML = `
     <select class="social-platform px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-medium text-sm">
       <option value="instagram">Instagram</option>
@@ -54,7 +57,7 @@ function addSocialLink() {
       <option value="tiktok">TikTok</option>
       <option value="whatsapp">WhatsApp</option>
     </select>
-    <input type="text" placeholder="Username or link" 
+    <input type="text" placeholder="Username or link"
       class="social-value flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none font-medium text-base">
     <button type="button" onclick="removeSocialLink('${id}')" class="p-3 text-slate-400 hover:text-red-500 transition">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -62,7 +65,7 @@ function addSocialLink() {
       </svg>
     </button>
   `;
-  
+
   container.appendChild(div);
 }
 
@@ -85,7 +88,7 @@ function updateInitial(val) {
 async function handleProfileImageSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
-  
+
   try {
     const base64 = await compressImage(file);
     profileImageBase64 = base64;
@@ -127,7 +130,7 @@ window.handleProfileImageSelect = handleProfileImageSelect;
 
 async function handleStoreSetup(event) {
   event.preventDefault();
-  
+
   if (!window.firebaseApp || !window.firebaseApp.auth) {
     alert('Firebase not initialized');
     return;
@@ -155,12 +158,12 @@ async function handleStoreSetup(event) {
     const storeName = document.getElementById('storeName').value.trim();
     const storeSlug = document.getElementById('storeSlug').value.trim().toLowerCase();
     const storeDescription = document.getElementById('storeDescription').value.trim();
-    
+
     let storeCategory = document.getElementById('storeCategoryCustom').value.trim();
     if (!storeCategory) {
       storeCategory = document.getElementById('storeCategory').value;
     }
-    
+
     const storeEmail = document.getElementById('storeEmail').value.trim();
     const phoneCountry = document.getElementById('storePhoneCountry').value;
     const phoneNumber = document.getElementById('storePhone').value.trim();
@@ -171,9 +174,9 @@ async function handleStoreSetup(event) {
       return;
     }
     const storePhone = phoneCountry + ' ' + phoneNumber;
-    
+
     const storeAddress = document.getElementById('storeAddress') ? document.getElementById('storeAddress').value.trim() : '';
-    
+
     // Collect social links
     const socialLinks = [];
     document.querySelectorAll('#socialLinksContainer > div').forEach(div => {
@@ -206,11 +209,15 @@ async function handleStoreSetup(event) {
 
     // Update user document in Firestore
     await window.firebaseApp.db.collection('users').doc(user.uid).update(storeData);
-    
-    alert('🎉 Store created successfully! Redirecting to your profile...');
+
+    alert(rewardDate
+      ? '🎉 Store created successfully! Redirecting to paid product upload...'
+      : '🎉 Store created successfully! Redirecting to your profile...');
 
     setTimeout(() => {
-      window.location.href = 'store-profile.html';
+      window.location.href = rewardDate
+        ? `store-upload.html?rewardDate=${encodeURIComponent(rewardDate)}`
+        : 'store-profile.html';
     }, 1000);
 
   } catch (error) {
